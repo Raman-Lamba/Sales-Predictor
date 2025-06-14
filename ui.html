@@ -314,7 +314,8 @@
     </div>
 
     <script>
-        const API_BASE = 'http://localhost:8000';
+        const API_BASE = window.location.origin; // Dynamically set API base to the current domain
+        console.log('API Base URL:', API_BASE); // For debugging in browser console
         
         // Global state
         let isDataUploaded = false;
