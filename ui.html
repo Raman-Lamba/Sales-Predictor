@@ -1,0 +1,534 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Sales Forecasting System</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/plotly.js/2.26.0/plotly.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #2c3e50 0%, #3498db 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+        
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+        
+        .header p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+        
+        .content {
+            padding: 40px;
+        }
+        
+        .section {
+            margin-bottom: 40px;
+            padding: 30px;
+            border-radius: 15px;
+            background: #f8f9fa;
+            border-left: 5px solid #3498db;
+        }
+        
+        .section h2 {
+            color: #2c3e50;
+            margin-bottom: 20px;
+            font-size: 1.5rem;
+        }
+        
+        .upload-area {
+            border: 3px dashed #3498db;
+            border-radius: 15px;
+            padding: 40px;
+            text-align: center;
+            background: #ecf0f1;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+        
+        .upload-area:hover {
+            background: #d5dbdb;
+            border-color: #2980b9;
+        }
+        
+        .upload-area.dragover {
+            background: #3498db;
+            color: white;
+        }
+        
+        .btn {
+            background: linear-gradient(135deg, #3498db, #2980b9);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            box-shadow: 0 5px 15px rgba(52, 152, 219, 0.3);
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(52, 152, 219, 0.4);
+        }
+        
+        .btn:disabled {
+            background: #bdc3c7;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+        
+        .btn-success {
+            background: linear-gradient(135deg, #27ae60, #2ecc71);
+            box-shadow: 0 5px 15px rgba(46, 204, 113, 0.3);
+        }
+        
+        .btn-success:hover {
+            box-shadow: 0 8px 25px rgba(46, 204, 113, 0.4);
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: bold;
+            color: #2c3e50;
+        }
+        
+        .form-group input, .form-group select {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #ecf0f1;
+            border-radius: 10px;
+            font-size: 1rem;
+            transition: border-color 0.3s ease;
+        }
+        
+        .form-group input:focus, .form-group select:focus {
+            outline: none;
+            border-color: #3498db;
+        }
+        
+        .status {
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            font-weight: bold;
+        }
+        
+        .status.success {
+            background: #d5f4e6;
+            color: #27ae60;
+            border: 1px solid #27ae60;
+        }
+        
+        .status.error {
+            background: #fadbd8;
+            color: #e74c3c;
+            border: 1px solid #e74c3c;
+        }
+        
+        .status.info {
+            background: #d6eaf8;
+            color: #3498db;
+            border: 1px solid #3498db;
+        }
+        
+        .metrics {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin: 20px 0;
+        }
+        
+        .metric-card {
+            background: white;
+            padding: 20px;
+            border-radius: 15px;
+            text-align: center;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            border-top: 4px solid #3498db;
+        }
+        
+        .metric-value {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #2c3e50;
+            margin-bottom: 5px;
+        }
+        
+        .metric-label {
+            color: #7f8c8d;
+            font-size: 0.9rem;
+        }
+        
+        .chart-container {
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            margin: 20px 0;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 20px;
+        }
+        
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #3498db;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .hidden {
+            display: none;
+        }
+        
+        .forecast-form {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            align-items: end;
+        }
+        
+        @media (max-width: 768px) {
+            .header h1 {
+                font-size: 2rem;
+            }
+            
+            .content {
+                padding: 20px;
+            }
+            
+            .forecast-form {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🚀 AI Sales Forecasting System</h1>
+            <p>Predict your future sales with advanced machine learning algorithms</p>
+        </div>
+        
+        <div class="content">
+            <!-- Data Upload Section -->
+            <div class="section">
+                <h2>📁 Step 1: Upload Your Sales Data</h2>
+                <div class="upload-area" id="uploadArea">
+                    <div>
+                        <h3>Drop your CSV file here or click to browse</h3>
+                        <p>Supported formats: CSV files with sales data</p>
+                        <input type="file" id="fileInput" accept=".csv" style="display: none;">
+                    </div>
+                </div>
+                <div id="uploadStatus"></div>
+            </div>
+            
+            <!-- Model Training Section -->
+            <div class="section">
+                <h2>🤖 Step 2: Train the AI Model</h2>
+                <p>Train the Prophet forecasting model on your uploaded data.</p>
+                <button class="btn" id="trainBtn" disabled>Train Model</button>
+                <div id="trainStatus"></div>
+            </div>
+            
+            <!-- Forecasting Section -->
+            <div class="section">
+                <h2>📈 Step 3: Generate Sales Forecast</h2>
+                <div class="forecast-form">
+                    <div class="form-group">
+                        <label for="periods">Forecast Periods (days):</label>
+                        <input type="number" id="periods" value="30" min="1" max="365">
+                    </div>
+                    <div class="form-group">
+                        <label for="includeHistory">Include Historical Data:</label>
+                        <select id="includeHistory">
+                            <option value="false">No</option>
+                            <option value="true">Yes</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <button class="btn btn-success" id="forecastBtn" disabled>Generate Forecast</button>
+                    </div>
+                </div>
+                <div id="forecastStatus"></div>
+            </div>
+            
+            <!-- Results Section -->
+            <div class="section" id="resultsSection" style="display: none;">
+                <h2>📊 Forecast Results</h2>
+                <div class="metrics" id="metricsContainer"></div>
+                <div class="chart-container">
+                    <div id="forecastChart"></div>
+                    <button class="btn" id="downloadImageBtn" style="margin-top:20px; display:none;">Download Forecast Image</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:8000';
+        
+        // Global state
+        let isDataUploaded = false;
+        let isModelTrained = false;
+        
+        // DOM elements
+        const uploadArea = document.getElementById('uploadArea');
+        const fileInput = document.getElementById('fileInput');
+        const uploadStatus = document.getElementById('uploadStatus');
+        const trainBtn = document.getElementById('trainBtn');
+        const trainStatus = document.getElementById('trainStatus');
+        const forecastBtn = document.getElementById('forecastBtn');
+        const forecastStatus = document.getElementById('forecastStatus');
+        const resultsSection = document.getElementById('resultsSection');
+        const metricsContainer = document.getElementById('metricsContainer');
+        const downloadImageBtn = document.getElementById('downloadImageBtn');
+        
+        // Upload area events
+        uploadArea.addEventListener('click', () => fileInput.click());
+        uploadArea.addEventListener('dragover', handleDragOver);
+        uploadArea.addEventListener('drop', handleDrop);
+        uploadArea.addEventListener('dragleave', handleDragLeave);
+        
+        fileInput.addEventListener('change', handleFileSelect);
+        trainBtn.addEventListener('click', trainModel);
+        forecastBtn.addEventListener('click', generateForecast);
+        downloadImageBtn.addEventListener('click', downloadForecastImage);
+        
+        function handleDragOver(e) {
+            e.preventDefault();
+            uploadArea.classList.add('dragover');
+        }
+        
+        function handleDragLeave(e) {
+            e.preventDefault();
+            uploadArea.classList.remove('dragover');
+        }
+        
+        function handleDrop(e) {
+            e.preventDefault();
+            uploadArea.classList.remove('dragover');
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                handleFile(files[0]);
+            }
+        }
+        
+        function handleFileSelect(e) {
+            const file = e.target.files[0];
+            if (file) {
+                handleFile(file);
+            }
+        }
+        
+        async function handleFile(file) {
+            if (!file.name.endsWith('.csv')) {
+                showStatus(uploadStatus, 'Please select a CSV file.', 'error');
+                return;
+            }
+            
+            const formData = new FormData();
+            formData.append('file', file);
+            
+            showLoading(uploadStatus, 'Uploading and processing data...');
+            
+            try {
+                const response = await fetch(`${API_BASE}/upload-data`, {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const result = await response.json();
+                
+                if (response.ok) {
+                    showStatus(uploadStatus, `✅ ${result.message}<br>
+                        📊 Data shape: ${result.data_shape[0]} rows × ${result.data_shape[1]} columns<br>
+                        📅 Date range: ${result.date_range.start_date} to ${result.date_range.end_date}`, 'success');
+                    isDataUploaded = true;
+                    trainBtn.disabled = false;
+                } else {
+                    showStatus(uploadStatus, `❌ ${result.detail}`, 'error');
+                }
+            } catch (error) {
+                showStatus(uploadStatus, `❌ Upload failed: ${error.message}`, 'error');
+            }
+        }
+        
+        async function trainModel() {
+            showLoading(trainStatus, 'Training AI model...');
+            trainBtn.disabled = true;
+            
+            try {
+                const response = await fetch(`${API_BASE}/train-model`, {
+                    method: 'POST'
+                });
+                
+                const result = await response.json();
+                
+                if (response.ok) {
+                    showStatus(trainStatus, `✅ ${result.status}<br>📈 Training samples: ${result.training_samples}`, 'success');
+                    isModelTrained = true;
+                    forecastBtn.disabled = false;
+                } else {
+                    showStatus(trainStatus, `❌ ${result.detail}`, 'error');
+                    trainBtn.disabled = false;
+                }
+            } catch (error) {
+                showStatus(trainStatus, `❌ Training failed: ${error.message}`, 'error');
+                trainBtn.disabled = false;
+            }
+        }
+
+        async function generateForecast() {
+            showLoading(forecastStatus, 'Generating forecast...');
+            forecastBtn.disabled = true;
+            resultsSection.style.display = 'none';
+            metricsContainer.innerHTML = '';
+            document.getElementById('forecastChart').innerHTML = '';
+            downloadImageBtn.style.display = 'none';
+
+            const periods = parseInt(document.getElementById('periods').value, 10);
+            const includeHistory = document.getElementById('includeHistory').value === 'true';
+
+            try {
+                const response = await fetch(`${API_BASE}/generate-forecast`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ periods, include_history: includeHistory })
+                });
+                const result = await response.json();
+                if (response.ok) {
+                    showStatus(forecastStatus, '✅ Forecast generated successfully!', 'success');
+                    renderMetrics(result.metrics);
+                    resultsSection.style.display = 'block';
+                    downloadImageBtn.style.display = 'inline-block';
+                    await showForecastImage();
+                } else {
+                    showStatus(forecastStatus, `❌ ${result.detail}`, 'error');
+                }
+            } catch (error) {
+                showStatus(forecastStatus, `❌ Forecast failed: ${error.message}`, 'error');
+            } finally {
+                forecastBtn.disabled = false;
+            }
+        }
+
+        async function showForecastImage() {
+            const periods = parseInt(document.getElementById('periods').value, 10);
+            const includeHistory = document.getElementById('includeHistory').value === 'true';
+            const chartDiv = document.getElementById('forecastChart');
+            chartDiv.innerHTML = '<div class="loading"><div class="spinner"></div><div>Loading forecast image...</div></div>';
+            try {
+                const response = await fetch(`${API_BASE}/forecast-image?periods=${periods}&include_history=${includeHistory}`, {
+                    method: 'POST'
+                });
+                if (!response.ok) throw new Error('Failed to load image');
+                const blob = await response.blob();
+                const url = window.URL.createObjectURL(blob);
+                chartDiv.innerHTML = `<img src="${url}" alt="Forecast Image" style="max-width:100%; border-radius:10px; box-shadow:0 5px 15px rgba(0,0,0,0.1);"/>`;
+            } catch (error) {
+                chartDiv.innerHTML = `<div class="status error">❌ Failed to load forecast image: ${error.message}</div>`;
+            }
+        }
+
+        async function downloadForecastImage() {
+            downloadImageBtn.disabled = true;
+            showStatus(forecastStatus, 'Preparing image for download...', 'info');
+            const periods = parseInt(document.getElementById('periods').value, 10);
+            const includeHistory = document.getElementById('includeHistory').value === 'true';
+            try {
+                const response = await fetch(`${API_BASE}/forecast-image?periods=${periods}&include_history=${includeHistory}`, {
+                    method: 'POST'
+                });
+                if (!response.ok) throw new Error('Failed to generate image');
+                const blob = await response.blob();
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'forecast.png';
+                document.body.appendChild(a);
+                a.click();
+                a.remove();
+                window.URL.revokeObjectURL(url);
+                showStatus(forecastStatus, '✅ Image downloaded!', 'success');
+            } catch (error) {
+                showStatus(forecastStatus, `❌ Image download failed: ${error.message}`, 'error');
+            } finally {
+                downloadImageBtn.disabled = false;
+            }
+        }
+
+        function showStatus(element, message, type = 'info') {
+            element.innerHTML = `<div class="status ${type}">${message}</div>`;
+        }
+
+        function showLoading(element, message) {
+            element.innerHTML = `<div class="loading"><div class="spinner"></div><div>${message}</div></div>`;
+        }
+
+        function renderMetrics(metrics) {
+            if (!metrics) return;
+            metricsContainer.innerHTML = '';
+            const metricMap = {
+                mae: 'MAE',
+                rmse: 'RMSE',
+                mape: 'MAPE (%)'
+            };
+            Object.keys(metrics).forEach(key => {
+                const card = document.createElement('div');
+                card.className = 'metric-card';
+                card.innerHTML = `<div class="metric-value">${metrics[key].toFixed(2)}</div><div class="metric-label">${metricMap[key] || key}</div>`;
+                metricsContainer.appendChild(card);
+            });
+        }
+    </script>
+</body>
+</html>
