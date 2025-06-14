@@ -252,7 +252,10 @@ async def upload_data(file: UploadFile = File(...)):
         )
         
     except Exception as e:
-        raise HTTPException(status_code=400, detail=f"File upload failed: {str(e)}")
+        import traceback
+        print(f"ERROR: Exception in upload_data: {e}")
+        traceback.print_exc()
+        raise HTTPException(status_code=400, detail=f"File upload failed: {str(e) or 'Unknown processing error'}")
 
 @app.post("/train-model")
 async def train_model():
